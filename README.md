@@ -96,6 +96,8 @@ For example, Tree 1 might strictly have nodes comparing the countries' elo ratin
 Furthermore, some tree might have slightly different input feature values than other trees.
 For example, Tree 1 might have a elo rating of 2111 for Spain, but Tree 2 have a elo rating of 2001. 
 
+This is all done for us and abstracted away from us by the `RandomForestClassifier` class from Scikit Learn.
+
 Before predicting a match, every tree receives the same nine features as inputs.
 In a Spain vs. Brazil match, Tree 1 might predict a Spain win, but Tree 2 might predict a draw and maybe Tree 2 predicts Brazil to win.
 The random forest aggregates all of our `x` tree's prediction.
@@ -115,9 +117,9 @@ which we can convert to probabilities by dividing each count by the number of tr
 {"home win": 0.70333333333, "draw": 0.13, "away win": 0.16666666666}
 ```
 
-Look at that, our random forest is able to predict the outcome of a match.
+Look at that! Our random forest is able to predict the outcome of a match.
 
-Lastly, the repo adds a calibration step that will compare against the data one more time to see if the probability makes sense.
+Lastly, the repo adds a calibration step that will compare against the data one more time to see if the probability makes sense which is done by the `CalibratedClassifierCV` from Scikit Learn.
 But this is the basic idea, the forest combines many slightly different opinions into probabilities for a match outcome.
 
 
