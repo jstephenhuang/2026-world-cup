@@ -1,4 +1,4 @@
-# World Cup 2026
+# 2026 World Cup
 
 _i wrote this readme entirely in my own words with the help of chatgpt for better words, expect a lot of grammar and syntax errors._
 
