@@ -1,5 +1,7 @@
 # World Cup 2026
 
+_i wrote this readme entirely in my own words with the help of chatgpt for better words, expect a lot of grammar and syntax errors._
+
 Back when March Madness was happening, I participated in my class's NCAA basketball tournament bracket.
 I do play basketball, but I have zero knowledge of collegiate basketball teams and players.
 I did not want to create my bracket based on feeling, with zero strategy.
@@ -22,47 +24,48 @@ This repository attempts to predict how likely each country in the 2026 World Cu
 
 ### What is a Random Forest? (in my own words)
 
-If I were to describe it in one sentence:
-
-A **Random Forest** aggregates the predictions of `x` **Decision Trees**, all a little different from each other, resulting in a probability for each possible outcome.
-
-More thorough explanation:
-
-To understand a random forest, it is important to understand its fundamental component: a **Decision Tree**. A decision tree starts with a root node (a root question). Given the inputs, each answer takes the tree farther down until it reaches a leaf node (a possible output).
-
-_A **Decision Tree** is a tree-like structure that predicts an outcome by asking a sequence of yes-or-no questions at its nodes._
-
-For example:
-
-<img width="800" height="400" alt="Example decision tree that predicts whether a customer will buy a product" src="https://github.com/user-attachments/assets/1940f5b6-9c51-482d-bc93-dcb79d8d65e8" />
+If I were to describe it in one sentence: A **Random Forest** aggregates the predictions of `x` **Decision Trees**, all a little different from each other, resulting in a probability for each possible outcome.
 
 ---
 
-So a random forest is essentially composed of multiple trees, making a **forest**.
-Why random? Each tree is trained on a **random** sample / subset of the dataset. This makes the trees a little different from each other.
+To understand a random forest, it is important to understand its fundamental component: a **decision tree**. A decision tree starts with a root node (a root question). Given the inputs, each answer takes the tree farther down until it reaches a leaf node (a possible output).
+
+_A **Decision Tree** is a tree-like structure that predicts an outcome by asking a sequence of yes-or-no questions at its nodes._
+
+<img width="4381" height="2344" alt="Example of a Decision Tree predicting whether a customer will buy a product." src="https://github.com/user-attachments/assets/94956e21-1cbc-4877-9d8d-368b5cd2984e" />
+<p align="center"><sub>Example of a Decision Tree predicting whether a customer will buy a product.</sub></p>
+
+So a random forest is essentially composed of multiple of these trees, making a **forest**.
+Why random? Each tree is trained on a **random** sample / subset of the dataset. This makes the trees a little different from each other like how we would observed in a real life forest.
 
 ### How does a Random Forest work?
 
-When designing a random forest, the inputs and outputs of the decision trees need to be defined in a way that lets them predict the outcome in question.
+When building a random forest, we first need to design its individual decision trees. A decision tree's structure is strictly dictated by the possible outcomes (ouputs) and the available data (inputs). Since the possible
 
 In my case, I want to predict the outcome of a soccer game (yes, I call it soccer, fight me) given the home team and away team.
 
+#### Outputs
+
 The outputs are simple:
 
-- home team win
+- home win
 - draw
-- away team win
+- away win
+
+#### Inputs
 
 The inputs, on the other hand, require a little more work because they depend on the data.
-Data is not usually processed in a form that a model can use directly, so it requires an extra step to turn it into something more usable.
+Data is usually not processed in a form that a model can use directly, so it requires an extra step to turn it into something more usable, something that allows us to build a yes-or-no question.
+
 I call this step **extracting features**.
-For example, in the picture above, when trying to predict whether a customer will buy a product, age was one of the extracted feature from the customer data.
-Why? Age, based on the data, was deemed relevant by the creator of the tree in predicting if a custom will buy a product.
-So features could be human extracted, or nowadays by llms.
+
+For example, in the picture above, when trying to predict whether a customer will buy a product, the different features extracted were age, income and previous purchase.
+Why? Based on the customer data, age, income and previous purchase were deemed relevant by the creator of the tree in predicting if a custom will buy a product.
+So features could be human extracted, or nowadays extracted by llms.
 
 In this repo, I asked Claude to extract the features given the kaggle dataset, it extracted 9:
 
-1. `elo_diff`: home team elo rating minus away team Elo rating
+1. `elo_diff`: home team elo rating minus away team elo rating
 2. `home_elo`: home team elo rating before the match
 3. `away_elo`: away team elo rating before the match
 4. `neutral`: `1` if played at a neutral venue, otherwise `0`
@@ -72,68 +75,21 @@ In this repo, I asked Claude to extract the features given the kaggle dataset, i
 8. `away_form_gf`: away team's average goals scored over its previous five matches
 9. `away_form_ga`: away team's average goals conceded over its previous five matches
 
-I will take some time to explain how these feature were extracted from the kaggle [International football results from 1872 to 2026](https://www.kaggle.com/datasets/martj42/international-football-results-from-1872-to-2017) dataset. 
+I won't get too much in detail how Claude extracted these details, they are pretty intuitive and simple. The most interesting one is the elo of a country. Using the [Elo Rating algorithm](https://www.geeksforgeeks.org/dsa/elo-rating-algorithm), we can replay the historical match in chronological order and extract an elo for a country.
 
-`elo_rating`:
-
-To extract each country's elo rating from the kaggle dataset, the program starts every team at **1500 elo** and replays every historical match in chronological order.
-
-Before each match, it saves both teams' ratings as `home_elo` and `away_elo`. Then, it calculates how likely the home team is to win:
-
-```text
-home_advantage = 65
-expected_home_score = 1 / (1 + 10^((away_elo - (home_elo + home_advantage)) / 400))
-```
-
-This is the common logistic curve used on elo rating systems. 
-For some intuition, if the `away_elo` is greater than `home_elo` + `home_advantage` (away team is stronger than home team), the exponent on 10 is positive which makes the denominator greater and the `expected_home_score` lower.
-This makes sense since we would expect the away team to win (home team to lose) if they are way skilled and better than the home team even on home soil. 
-This equation also keeps the the score between 0 and 1.
-
-*The model uses a 65-point home advantage, unless the match is played on neutral ground in which case is 0.*
-
-After the match, both ratings are updated based on how much the result differed from expectation:
-
-```text
-change =
-30 × (1 + ln(1 + goal_difference))
-× (actual_result - expected_result)
-```
-
-where `actual_result` is:
-
-```text
-home win = 1.0
-draw     = 0.5
-away win = 0.0
-```
-
-For example, if two 1500-rated teams play on neutral ground, the expected score is `0.5`. If the home team wins **2–0**:
-
-```text
-change = 30 × (1 + ln(3)) × (1 - 0.5)
-       ≈ 31.48
-```
-
-So the winner becomes roughly **1531.5 elo**, and the loser becomes roughly **1468.5 elo**.
-
-`home_form_gf`:
-
-TODO...
+One important note is that after these features are calculated from the dataset, during each simulated World Cup, the model keeps each team's elo rating and recent form fixed while predicting its matches. This is another possible improvement for the future.
 
 ---
 
-So the winner becomes roughly **1531.5 elo**, and the loser becomes roughly **1468.5 elo**.
-
 After each feature is well defined and extracted, we can use every historical match as a training example to build the decision trees.
 
-To build one Decision Tree, the model starts at the root node and finds a yes-or-no question about a feature that best separates the different match outcomes.
+To build one decision tree, the model starts at the root node and finds a yes-or-no question about a feature that best separates the different match outcomes.
 It then repeats this process for each branch until it reaches a leaf node that predicts a home win, draw, or away win.
 
 For example, one tree might first ask, "Is the home team's elo rating greater than 1800?"
 It could then ask a different question depending on the answer, such as "Is the home team's average goals scored over the previous five matches greater than 1.5?"
 
-Rather than trusting just one tree, the Random Forest builds `x` slightly different Decision Trees.
+Rather than trusting just one tree, the random forest builds `x` slightly different decision trees.
 Each tree is trained on a random sample of the historical matches and considers a random subset of features at each node.
 Therefore, some trees might put more importance on certain features than other trees.
 For example, Tree 1 might strictly have nodes comparing the countries' elo ratings, but Tree 2 might instead look at their average goals.
@@ -142,14 +98,16 @@ For example, Tree 1 might have a elo rating of 2111 for Spain, but Tree 2 have a
 
 Before predicting a match, every tree receives the same nine features as inputs.
 In a Spain vs. Brazil match, Tree 1 might predict a Spain win, but Tree 2 might predict a draw and maybe Tree 2 predicts Brazil to win.
-The Random Forest aggregates all `x` tree's prediction.
+The random forest aggregates all of our `x` tree's prediction.
 
-As a result, we are left with:
+As a result, we are left with a chart like result:
 
 ```py
 # for 600 trees
 {"home win": 422, "draw": 78, "away win": 100}
 ```
+<img width="1797" height="1260" alt="image" src="https://github.com/user-attachments/assets/48b1528e-5a73-40fe-a97e-9da77c0a4552" />
+<p align="center"><sub>Chart of the aggregated predictions of our Decision Trees.</sub></p>
 
 which we can convert to probabilities by dividing each count by the number of trees:
 
@@ -159,7 +117,8 @@ which we can convert to probabilities by dividing each count by the number of tr
 
 Look at that, our random forest is able to predict the outcome of a match.
 
-Lastly, the repo adds a calibration step that checks if this so its final probabilities are not literally just the raw tree-vote fractions. But this is the basic idea: the forest combines many slightly different opinions into probabilities for a match outcome.
+Lastly, the repo adds a calibration step that will compare against the data one more time to see if the probability makes sense.
+But this is the basic idea, the forest combines many slightly different opinions into probabilities for a match outcome.
 
 
 ### Monte Carlo Simulation
@@ -175,7 +134,7 @@ In the end, I was left with [predictions_2026.csv](predictions_2026.csv).
 
 ### Implementation
 
-I asked Claude to not only extract the features that the decision trees should use, but I also instructed it to write the entire source code.
+I asked Claude to not only extract the features that the decision trees should use, but I also instructed it to write the entire source code. I also instructed to use the pre-built `RandomForestClassifer` class from [Scikit Learn RandomForestClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html).
 
 ## How to use
 
@@ -188,7 +147,7 @@ You need Python 3.14 or newer and [uv](https://docs.astral.sh/uv/) installed. Th
    uv run python main.py --data path/to/results.csv
    ```
 
-   This trains the default Random Forest and runs 20,000 simulated tournaments. To choose a different number of simulations, use `--sims`:
+   This trains the default random forest and runs 20,000 simulated tournaments. To choose a different number of simulations, use `--sims`:
 
    ```bash
    uv run python main.py --data path/to/results.csv --sims 50000
@@ -263,11 +222,14 @@ I was the only one in the pool to have picked Spain to win the final.
 
 I learned a lot and will definitely try using this model when March Madness 2027 comes around to see whether this was just a fluke or a reliable predictive model.
 
-## Future improvements
+## Future
 
-For this run, I trained the random forest using only `results.csv`. If I had more time, I would train a larger forest (more decision trees) and incorporate the other files available in the Kaggle dataset.
+For this run, I trained the random forest using only `results.csv`. 
+If I had more time, I would train a larger forest (more decision trees) and incorporate the other files available in the kaggle dataset.
 More specifically, there were two other useful csvs, `goalscorers.csv` and `shootouts.csv`.
 Including shootout data may have improved my predictions for matches decided by penalties.
 For example, the random forest ranked Germany higher than Paraguay.
 But Germany's penalty kicks against Paraguay were absolutely horrendous, which cost them the game.
 But perhaps the pressure got to them, and that extra data could have wrongly predicted the ranking of other teams. 🤷
+
+Furthermore, spend more time on magic values that Claude decided to use, for example choosing a 65 point home advantage or running 20,000 simulations instead of less or more.
