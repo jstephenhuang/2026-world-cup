@@ -141,15 +141,20 @@ Here was the results `predictions_2026.csv`:
 | Curacao | 0.00% | 0.00% | 0.04% | 0.22% | 1.42% | 11.86% |
 
 Analyzing my predictions, it accurately predicted Spain to win the title and Argentina to come second.
-Well, not directly, but it predicted that Spain was the most likely to win the title.
+Not explicitly, but it predicted that Spain was the most likely to win the title.
 
-However, there are some predictions that were off the mark, like Brazil.
+There are some predictions that were off the mark, like Brazil.
+
+I was able to use these results to win a small prediction pool of 25 people organized by the company (fellow.ai) I interned at over the summer. It was an extremely fun experience seeing in real time how a set of yes and no questions was correctly predicting most of the games and notably the title match. I was the only one within the pool to have picked Spain to win the final.
+
+I learned a lot and will definitely try using this model when March Madness 2027 comes around to see whether if this was just a fluke or a reliable predictive model.
 
 ## Future improvements
 
 For this run, I trained the random forest using only `results.csv`. If I had more time, I would train a larger forest (more decision trees) and incorporate the other files available in the Kaggle dataset.
 More specifically, there were two other useful csvs, `goalscorers.csv` and `shootouts.csv`.
+
 Including shootout data may have improved my predictions for matches decided by penalties.
 For example, the random forest ranked Germany higher than Paraguay.
 But Germany's penalty kicks against Paraguay were absolutely horrendous, which cost them the game.
-But perhaps the pressure got to them, and that extra data could have wrongly predicted the ranking of other teams. :shrug:
+But perhaps the pressure got to them, and that extra data could have wrongly predicted the ranking of other teams. 🤷
