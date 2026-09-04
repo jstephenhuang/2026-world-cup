@@ -234,4 +234,4 @@ For example, the random forest ranked Germany higher than Paraguay.
 But Germany's penalty kicks against Paraguay were absolutely horrendous, which cost them the game.
 But perhaps the pressure got to them, and that extra data could have wrongly predicted the ranking of other teams. 🤷
 
-Furthermore, spend more time on understand the magic values that Claude decided to use, for example choosing a 65 point home advantage or running 20,000 simulations instead of less or more.
+Furthermore, spend more time on understanding the magic values that Claude decided to use, for example choosing a 65 point home advantage or running 20,000 simulations instead of less or more.
